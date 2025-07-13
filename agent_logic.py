@@ -1,8 +1,9 @@
 from langchain_community.llms import Ollama
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import Runnable
+from config import OLLAMA_MODEL
 
-llm = Ollama(model="llama3")
+llm = Ollama(model=OLLAMA_MODEL)
 
 # Break down topic
 def break_down_topic(topic: str) -> str:
