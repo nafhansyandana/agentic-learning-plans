@@ -77,13 +77,24 @@ with tab1:
             with st.spinner("Generating subtopics..."):
                 subtopics = agent_logic.break_down_topic(topic)
                 st.success("Subtopics generated successfully!")
-                with st.expander("View Subtopics", expanded = True):
-                    st.text(subtopics)
                 st.session_state["subtopics"] = subtopics
         else:
             st.warning("Please enter a learning goal to proceed.")
 
-    if "subtopics" in st.session_state:
+    # Display Subtopics if available
+    if "subtopics" in st.session_state and st.session_state["subtopics"].strip():
+        st.divider()
+        st.markdown("#### Result: Generated Subtopics")
+        with st.expander("View Subtopics", expanded = True):
+            st.code(st.session_state["subtopics"], language = "markdown")
+
+        st.download_button(
+            label = "Download Subtopics (.md)",
+            data = plan_generator.prepare_download_content(st.session_state["subtopics"]),
+            file_name = "subtopics.md",
+            mime = "text/markdown"
+        )
+
         st.divider()
         st.markdown("#### Study Plan Configuration")
         duration_weeks = st.number_input("Duration (weeks)", min_value = 1, max_value = 12, value = 4)
@@ -92,17 +103,31 @@ with tab1:
             with st.spinner("Creating your personalized study plan..."):
                 plan = agent_logic.generate_study_plan(st.session_state["subtopics"], duration_weeks)
                 st.success("Study Plan generated successfully!")
-                with st.expander("View Study Plan", expanded = True):
-                    st.text(plan)
                 st.session_state["plan"] = plan
 
-    if "plan" in st.session_state:
+    # Display Study Plan if available
+    if "plan" in st.session_state and st.session_state["plan"].strip():
+        st.divider()
+        st.markdown("#### Result: Study Plan")
+        with st.expander("View Study Plan", expanded = True):
+            st.code(st.session_state["plan"], language = "markdown")
+
+        st.download_button(
+            label = "Download Study Plan (.md)",
+            data = plan_generator.prepare_download_content(st.session_state["plan"]),
+            file_name = "study_plan.md",
+            mime = "text/markdown"
+        )
+
         st.divider()
         st.markdown("#### Manage Saved Plan")
         cols = st.columns(3)
         with cols[0]:
             if st.button("Save Plan"):
-                plan_generator.save_plan(st.session_state.get("subtopics", ""), st.session_state.get("plan", ""))
+                plan_generator.save_plan(
+                    st.session_state.get("subtopics", ""),
+                    st.session_state.get("plan", "")
+                )
                 st.success("Plan saved successfully!")
         with cols[1]:
             if st.button("Load Saved Plan"):
