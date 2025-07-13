@@ -18,3 +18,6 @@ def load_plan():
 def reset_plan():
     if os.path.exists(DATA_FILE):
         os.remove(DATA_FILE)
+
+def prepare_download_content(content: str) -> bytes:
+    return content.encode("utf-8")
