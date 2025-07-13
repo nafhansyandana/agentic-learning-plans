@@ -1,6 +1,7 @@
 import streamlit as st
 import agent_logic
 import plan_generator
+import progress_tracker
 
 st.set_page_config(page_title = "Personalized Learning Coach", layout = "centered")
 
@@ -71,3 +72,24 @@ with tab2:
                 st.text_area("Updated Plan:", new_plan, height = 300)
         else:
             st.warning("Please fill in both the current plan and your progress notes.")
+
+    st.markdown("---")
+    if st.button("Save Progress Note"):
+        if progress_notes.strip():
+            progress_tracker.save_progress_note(progress_notes)
+            st.success("Progress note saved!")
+        else:
+            st.warning("Please enter your progress notes to save.")
+
+    if st.button("Load All Progress Notes"):
+        notes = progress_tracker.load_progress_notes()
+        if notes:
+            st.success(f"Loaded {len(notes)} notes!")
+            for entry in notes:
+                st.markdown(f"- **{entry['timestamp']}**: {entry['note']}")
+        else:
+            st.warning("No progress notes found.")
+
+    if st.button("Reset Progress Notes"):
+        progress_tracker.reset_progress_notes()
+        st.success("All progress notes have been deleted!")
