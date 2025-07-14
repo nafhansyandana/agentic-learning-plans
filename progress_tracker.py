@@ -2,27 +2,33 @@ import json
 import os
 from datetime import datetime
 
-DATA_FILE = "data/progress_log.json"
+BASE_DIR = "data/users"
 
-def save_progress_note(note: str):
-    os.makedirs(os.path.dirname(DATA_FILE), exist_ok = True)
+def _user_progress_file(username: str) -> str:
+    return os.path.join(BASE_DIR, username, "progress_log.json")
+
+def save_progress_note(username: str, note: str):
+    path = _user_progress_file(username)
+    os.makedirs(os.path.dirname(path), exist_ok = True)
     logs = []
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding = "utf-8") as f:
+    if os.path.exists(path):
+        with open(path, "r", encoding = "utf-8") as f:
             logs = json.load(f)
     logs.append({
         "timestamp": datetime.now().isoformat(),
         "note": note
     })
-    with open(DATA_FILE, "w", encoding = "utf-8") as f:
-        json.dump(logs, f, indent=2)
+    with open(path, "w", encoding = "utf-8") as f:
+        json.dump(logs, f, indent = 2)
 
-def load_progress_notes():
-    if not os.path.exists(DATA_FILE):
+def load_progress_notes(username: str):
+    path = _user_progress_file(username)
+    if not os.path.exists(path):
         return []
-    with open(DATA_FILE, "r", encoding = "utf-8") as f:
+    with open(path, "r", encoding = "utf-8") as f:
         return json.load(f)
 
-def reset_progress_notes():
-    if os.path.exists(DATA_FILE):
-        os.remove(DATA_FILE)
+def reset_progress_notes(username: str):
+    path = _user_progress_file(username)
+    if os.path.exists(path):
+        os.remove(path)
