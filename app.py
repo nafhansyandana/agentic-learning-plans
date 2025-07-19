@@ -3,6 +3,7 @@ import agent_logic
 import plan_generator
 import progress_tracker
 
+# Custom CSS
 st.markdown(
     """
     <style>
@@ -10,29 +11,24 @@ st.markdown(
         background-color: #121212;
         color: #e0e0e0;
     }
-
     .stApp {
         padding: 2rem;
     }
-
     h1, h2, h3, h4, h5, h6 {
         color: #ffffff;
     }
-
     .stContainer {
         background-color: #1e1e1e;
         padding: 1.5rem;
         border-radius: 12px;
         box-shadow: 0 0 10px rgba(0,0,0,0.4);
     }
-
     .stExpander {
         background-color: #1b1b1b;
         border: 1px solid #333;
         border-radius: 8px;
         padding: 0.5rem;
     }
-
     .stButton>button {
         background-color: #4CAF50;
         color: white;
@@ -45,7 +41,6 @@ st.markdown(
         background-color: #45a049;
         cursor: pointer;
     }
-
     textarea, input {
         border-radius: 6px;
         border: 1px solid #555;
@@ -55,17 +50,37 @@ st.markdown(
     }
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html = True
 )
 
+# App Config
 st.set_page_config(page_title = "Personalized Learning Coach", layout = "centered")
 
+# User Profile Sidebar
+if "username" not in st.session_state:
+    st.session_state["username"] = ""
+
+st.sidebar.title("User Profile")
+username_input = st.sidebar.text_input("Enter your username", value = st.session_state["username"])
+if st.sidebar.button("Set User"):
+    if username_input.strip():
+        st.session_state["username"] = username_input.strip()
+        st.success(f"User set: {st.session_state['username']}")
+    else:
+        st.warning("Please enter a valid username.")
+
+if not st.session_state["username"]:
+    st.warning("Please set your username in the sidebar to use the app.")
+    st.stop()
+
+# Header
 st.title("Personalized Learning Coach Agent")
-st.caption("AI-powered study planner using LLaMA3.2 using Ollama")
+st.caption(f"AI-powered study planner using LLaMA3.2 via Ollama — User: {st.session_state['username']}")
 
 st.divider()
 tab1, tab2 = st.tabs(["Plan Creator", "Progress Check-in"])
 
+# TAB 1 
 with tab1:
     st.subheader("Plan Creator")
 
@@ -81,13 +96,11 @@ with tab1:
         else:
             st.warning("Please enter a learning goal to proceed.")
 
-    # Display Subtopics if available
     if "subtopics" in st.session_state and st.session_state["subtopics"].strip():
         st.divider()
         st.markdown("#### Result: Generated Subtopics")
         with st.expander("View Subtopics", expanded = True):
             st.code(st.session_state["subtopics"], language = "markdown")
-
         st.download_button(
             label = "Download Subtopics (.md)",
             data = plan_generator.prepare_download_content(st.session_state["subtopics"]),
@@ -105,13 +118,11 @@ with tab1:
                 st.success("Study Plan generated successfully!")
                 st.session_state["plan"] = plan
 
-    # Display Study Plan if available
     if "plan" in st.session_state and st.session_state["plan"].strip():
         st.divider()
         st.markdown("#### Result: Study Plan")
         with st.expander("View Study Plan", expanded = True):
             st.code(st.session_state["plan"], language = "markdown")
-
         st.download_button(
             label = "Download Study Plan (.md)",
             data = plan_generator.prepare_download_content(st.session_state["plan"]),
@@ -125,13 +136,14 @@ with tab1:
         with cols[0]:
             if st.button("Save Plan"):
                 plan_generator.save_plan(
+                    st.session_state["username"],
                     st.session_state.get("subtopics", ""),
                     st.session_state.get("plan", "")
                 )
                 st.success("Plan saved successfully!")
         with cols[1]:
             if st.button("Load Saved Plan"):
-                subtopics, plan = plan_generator.load_plan()
+                subtopics, plan = plan_generator.load_plan(st.session_state["username"])
                 if subtopics or plan:
                     st.session_state["subtopics"] = subtopics
                     st.session_state["plan"] = plan
@@ -140,11 +152,12 @@ with tab1:
                     st.warning("No saved plan found.")
         with cols[2]:
             if st.button("Reset Saved Plan"):
-                plan_generator.reset_plan()
+                plan_generator.reset_plan(st.session_state["username"])
                 st.session_state.pop("subtopics", None)
                 st.session_state.pop("plan", None)
                 st.success("Saved plan has been reset.")
 
+# TAB 2 
 with tab2:
     st.subheader("Progress Check-in")
 
@@ -170,13 +183,13 @@ with tab2:
     with cols2[0]:
         if st.button("Save Progress Note"):
             if progress_notes.strip():
-                progress_tracker.save_progress_note(progress_notes)
+                progress_tracker.save_progress_note(st.session_state["username"], progress_notes)
                 st.success("Progress note saved!")
             else:
                 st.warning("Please enter your progress notes to save.")
     with cols2[1]:
         if st.button("Load All Progress Notes"):
-            notes = progress_tracker.load_progress_notes()
+            notes = progress_tracker.load_progress_notes(st.session_state["username"])
             if notes:
                 st.success(f"Loaded {len(notes)} notes!")
                 for entry in notes:
@@ -186,5 +199,5 @@ with tab2:
                 st.warning("No progress notes found.")
     with cols2[2]:
         if st.button("Reset Progress Notes"):
-            progress_tracker.reset_progress_notes()
+            progress_tracker.reset_progress_notes(st.session_state["username"])
             st.success("All progress notes have been deleted.")
