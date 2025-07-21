@@ -2,6 +2,7 @@ import streamlit as st
 import agent_logic
 import plan_generator
 import progress_tracker
+from plan_generator import generate_pdf
 
 # Custom CSS
 st.markdown(
@@ -101,12 +102,19 @@ with tab1:
         st.markdown("#### Result: Generated Subtopics")
         with st.expander("View Subtopics", expanded = True):
             st.code(st.session_state["subtopics"], language = "markdown")
+        # Download as Markdown
         st.download_button(
             label = "Download Subtopics (.md)",
             data = plan_generator.prepare_download_content(st.session_state["subtopics"]),
             file_name = "subtopics.md",
             mime = "text/markdown"
         )
+        # Download as PDF
+        st.download_button(
+            label = "Download Subtopics (.pdf)",
+            data = generate_pdf(st.session_state["subtopics"]),
+            file_name = "subtopics.pdf",
+            mime = "application/pdf")
 
         st.divider()
         st.markdown("#### Study Plan Configuration")
@@ -123,12 +131,19 @@ with tab1:
         st.markdown("#### Result: Study Plan")
         with st.expander("View Study Plan", expanded = True):
             st.code(st.session_state["plan"], language = "markdown")
+        # Download as Markdown
         st.download_button(
             label = "Download Study Plan (.md)",
             data = plan_generator.prepare_download_content(st.session_state["plan"]),
             file_name = "study_plan.md",
             mime = "text/markdown"
         )
+        # Download as PDF
+        st.download_button(
+            label = "Download Study Plan (.pdf)",
+            data = generate_pdf(st.session_state["plan"]),
+            file_name = "study_plan.pdf",
+            mime = "application/pdf")
 
         st.divider()
         st.markdown("#### Manage Saved Plan")
