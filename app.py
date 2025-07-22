@@ -4,64 +4,144 @@ import plan_generator
 import progress_tracker
 from plan_generator import generate_pdf
 
-# Custom CSS
-st.markdown(
-    """
-    <style>
-    html, body, [data-testid="stAppViewContainer"] {
-        background-color: #121212;
-        color: #e0e0e0;
-    }
-    .stApp {
-        padding: 2rem;
-    }
-    h1, h2, h3, h4, h5, h6 {
-        color: #ffffff;
-    }
-    .stContainer {
-        background-color: #1e1e1e;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.4);
-    }
-    .stExpander {
-        background-color: #1b1b1b;
-        border: 1px solid #333;
-        border-radius: 8px;
-        padding: 0.5rem;
-    }
-    .stButton>button {
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 0.5rem 1rem;
-        margin: 0.2rem;
-    }
-    .stButton>button:hover {
-        background-color: #45a049;
-        cursor: pointer;
-    }
-    textarea, input {
-        border-radius: 6px;
-        border: 1px solid #555;
-        background-color: #1e1e1e;
-        color: #e0e0e0;
-        padding: 0.5rem;
-    }
-    </style>
-    """,
-    unsafe_allow_html = True
-)
-
 # App Config
 st.set_page_config(page_title = "Personalized Learning Coach", layout = "centered")
 
-# User Profile Sidebar
+# Theme Toggle
+st.sidebar.title("User Profile")
+
+if "theme" not in st.session_state:
+    st.session_state["theme"] = "Dark"
+
+theme_choice = st.sidebar.radio("Select Theme", ["Dark", "Light"], index = 0 if st.session_state["theme"] == "Dark" else 1)
+st.session_state["theme"] = theme_choice
+
+# Apply selected theme
+def apply_theme(theme: str):
+    if theme == "Dark":
+        st.markdown(
+            """
+            <style>
+            html, body, [data-testid = "stAppViewContainer"] {
+                background-color: #121212;
+                color: #e0e0e0;
+            }
+            .stApp { padding: 2rem; }
+            h1, h2, h3, h4, h5, h6 { color: #ffffff; }
+            .stContainer {
+                background-color: #1e1e1e;
+                padding: 1.5rem;
+                border-radius: 12px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.4);
+            }
+            .stExpander {
+                background-color: #1b1b1b;
+                border: 1px solid #333;
+                border-radius: 8px;
+                padding: 0.5rem;
+            }
+            .stButton>button {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 0.5rem 1rem;
+                margin: 0.2rem;
+            }
+            .stButton>button:hover {
+                background-color: #45a049;
+                cursor: pointer;
+            }
+            textarea, input {
+                border-radius: 6px;
+                border: 1px solid #555;
+                background-color: #1e1e1e;
+                color: #e0e0e0;
+                padding: 0.5rem;
+            }
+            </style>
+            """,
+            unsafe_allow_html = True
+        )
+    else:
+        st.markdown(
+            """
+            <style>
+            html, body, [data-testid = "stAppViewContainer"] {
+                background-color: #ffffff;
+                color: #000000;
+            }
+            .stApp { padding: 2rem; }
+            h1, h2, h3, h4, h5, h6 { color: #000000; }
+            .stContainer {
+                background-color: #f9f9f9;
+                padding: 1.5rem;
+                border-radius: 12px;
+                box-shadow: 0 0 6px rgba(0,0,0,0.1);
+            }
+            .stExpander {
+                background-color: #f1f1f1;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                padding: 0.5rem;
+            }
+            .stButton>button {
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 0.5rem 1rem;
+                margin: 0.2rem;
+            }
+            .stButton>button:hover {
+                background-color: #0056b3;
+                cursor: pointer;
+            }
+            textarea, input {
+                border-radius: 6px;
+                border: 1px solid #ccc;
+                background-color: #ffffff;
+                color: #000000;
+                padding: 0.5rem;
+            }
+
+            code, pre, .stMarkdown code {
+                color: #222 !important;
+                background-color: #f1f1f1 !important;
+                border-radius: 6px;
+                padding: 0.3rem 0.5rem;
+                display: inline-block;
+            }
+            .stMarkdown {
+                color: #000 !important;
+            }
+            [data-testid="stText"] {
+                color: #000 !important;
+            }
+            [data-testid="stNotificationContent"] {
+                color: #000 !important;
+                background-color: #f8f9fa !important;
+                border-left: 4px solid #007bff !important;
+            }
+            [data-testid="stCaption"] {
+                color: #333 !important;
+            }
+            label, .css-1cpxqw2 {
+                color: #000 !important;
+                font-weight: 500;
+            }
+            </style>
+            """,
+            unsafe_allow_html = True
+        )
+
+apply_theme(st.session_state["theme"])
+
+# Header
+st.title("Personalized Learning Coach Agent")
 if "username" not in st.session_state:
     st.session_state["username"] = ""
 
-st.sidebar.title("User Profile")
 username_input = st.sidebar.text_input("Enter your username", value = st.session_state["username"])
 if st.sidebar.button("Set User"):
     if username_input.strip():
@@ -74,9 +154,7 @@ if not st.session_state["username"]:
     st.warning("Please set your username in the sidebar to use the app.")
     st.stop()
 
-# Header
-st.title("Personalized Learning Coach Agent")
-st.caption(f"AI-powered study planner using LLaMA3.2 via Ollama — User: {st.session_state['username']}")
+st.caption(f"AI-powered study planner using LLaMA3.2 via Ollama - User: {st.session_state['username']}")
 
 st.divider()
 tab1, tab2 = st.tabs(["Plan Creator", "Progress Check-in"])
