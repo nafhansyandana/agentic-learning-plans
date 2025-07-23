@@ -1,5 +1,7 @@
 import json
 import os
+from fpdf import FPDF
+from io import BytesIO
 
 BASE_DIR = "data/users"
 
@@ -27,3 +29,24 @@ def reset_plan(username: str):
 
 def prepare_download_content(content: str) -> bytes:
     return content.encode("utf-8")
+
+def generate_pdf(content: str) -> bytes:
+    pdf = FPDF()
+    pdf.add_page()
+
+    # Add a Unicode capable font (DejaVuSans)
+    font_path = os.path.join("assets", "fonts", "DejaVuSans.ttf")
+    pdf.add_font("DejaVu", "", font_path, uni = True)
+    pdf.set_font("DejaVu", size = 12)
+
+    for line in content.splitlines():
+        pdf.multi_cell(0, 10, line)
+
+    temp_path = "temp_output.pdf"
+    pdf.output(temp_path)
+
+    with open(temp_path, "rb") as f:
+        pdf_bytes = f.read()
+
+    os.remove(temp_path)
+    return pdf_bytes
