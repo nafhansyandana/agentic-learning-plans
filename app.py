@@ -157,7 +157,7 @@ if not st.session_state["username"]:
 st.caption(f"AI-powered study planner using LLaMA3.2 via Ollama - User: {st.session_state['username']}")
 
 st.divider()
-tab1, tab2 = st.tabs(["Plan Creator", "Progress Check-in"])
+tab1, tab2, tab3 = st.tabs(["Plan Creator", "Progress Check-in", "Upload Notes"])
 
 # TAB 1 
 with tab1:
@@ -290,7 +290,53 @@ with tab2:
                         st.text(entry['note'])
             else:
                 st.warning("No progress notes found.")
+        search_query = st.text_input("Search Notes", "", placeholder = "Enter keyword...")
+        if st.button("Search Notes"):
+            notes = progress_tracker.load_progress_notes(st.session_state["username"])
+            if notes:
+                results = [n for n in notes if search_query.lower() in n["note"].lower()]
+                if results:
+                    st.success(f"Found {len(results)} matching notes.")
+                    for entry in results:
+                        with st.expander(f"{entry['timestamp']}"):
+                            st.text(entry['note'])
+                else:
+                    st.warning("No matching notes found.")
+            else:
+                st.warning("No progress notes found.")
     with cols2[2]:
         if st.button("Reset Progress Notes"):
             progress_tracker.reset_progress_notes(st.session_state["username"])
             st.success("All progress notes have been deleted.")
+
+# TAB 3
+with tab3:
+    st.subheader("Upload Notes / RAG")
+    uploaded_file = st.file_uploader("Upload your notes (PDF)", type = ["pdf"])
+
+    if uploaded_file:
+        with st.spinner("Reading and analyzing the PDF..."):
+            pdf_bytes = uploaded_file.read()
+            notes_text = agent_logic.extract_text_from_pdf(pdf_bytes)
+            st.success("PDF uploaded and parsed")
+            st.markdown("#### Extracted Text Preview")
+            with st.expander("Show Text"):
+                st.text_area("Extracted Notes", notes_text, height = 200)
+
+        if st.button("Generate Subtopics from Notes"):
+            with st.spinner("Generating subtopics using your notes..."):
+                generated = agent_logic.break_down_topic(notes_text)
+                st.session_state["notes_subtopics"] = generated
+                st.success("Subtopics generated from notes!")
+
+    if "notes_subtopics" in st.session_state:
+        st.divider()
+        st.markdown("#### Result: Subtopics Extracted from Notes")
+        with st.expander("View Subtopics", expanded = True):
+            st.code(st.session_state["notes_subtopics"], language = "markdown")
+        st.download_button(
+            label = "Download Extracted Subtopics (.md)",
+            data = plan_generator.prepare_download_content(st.session_state["notes_subtopics"]),
+            file_name = "extracted_subtopics.md",
+            mime = "text/markdown"
+        )
