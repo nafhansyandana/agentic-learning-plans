@@ -290,6 +290,20 @@ with tab2:
                         st.text(entry['note'])
             else:
                 st.warning("No progress notes found.")
+        search_query = st.text_input("Search Notes", "", placeholder = "Enter keyword...")
+        if st.button("Search Notes"):
+            notes = progress_tracker.load_progress_notes(st.session_state["username"])
+            if notes:
+                results = [n for n in notes if search_query.lower() in n["note"].lower()]
+                if results:
+                    st.success(f"Found {len(results)} matching notes.")
+                    for entry in results:
+                        with st.expander(f"{entry['timestamp']}"):
+                            st.text(entry['note'])
+                else:
+                    st.warning("No matching notes found.")
+            else:
+                st.warning("No progress notes found.")
     with cols2[2]:
         if st.button("Reset Progress Notes"):
             progress_tracker.reset_progress_notes(st.session_state["username"])
