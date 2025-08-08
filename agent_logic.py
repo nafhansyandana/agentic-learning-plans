@@ -1,8 +1,10 @@
 from langchain_community.llms import Ollama
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import Runnable
+from config import OLLAMA_MODEL
+import fitz
 
-llm = Ollama(model="llama3")
+llm = Ollama(model=OLLAMA_MODEL)
 
 # Break down topic
 def break_down_topic(topic: str) -> str:
@@ -29,3 +31,12 @@ def adjust_plan(current_plan: str, progress_notes: str) -> str:
     Please suggest an updated plan based on this progress. Be encouraging and helpful.
     """
     return llm.invoke(prompt)
+
+def extract_text_from_pdf(pdf_bytes: bytes) -> str:
+    """Extracts all text from a PDF file (bytes)"""
+    doc = fitz.open(stream=pdf_bytes, filetype = "pdf")
+    text = ""
+    for page in doc:
+        text += page.get_text()
+    doc.close()
+    return text
