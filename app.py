@@ -3,6 +3,8 @@ import agent_logic
 import plan_generator
 import progress_tracker
 from plan_generator import generate_pdf
+import matplotlib.pyplot as plt
+from datetime import datetime
 
 # App Config
 st.set_page_config(page_title = "Personalized Learning Coach", layout = "centered")
@@ -280,6 +282,7 @@ with tab2:
                 st.success("Progress note saved!")
             else:
                 st.warning("Please enter your progress notes to save.")
+
     with cols2[1]:
         if st.button("Load All Progress Notes"):
             notes = progress_tracker.load_progress_notes(st.session_state["username"])
@@ -287,27 +290,91 @@ with tab2:
                 st.success(f"Loaded {len(notes)} notes!")
                 for entry in notes:
                     with st.expander(f"{entry['timestamp']}"):
-                        st.text(entry['note'])
+                        st.text(entry.get('note', ''))
             else:
                 st.warning("No progress notes found.")
+
         search_query = st.text_input("Search Notes", "", placeholder = "Enter keyword...")
         if st.button("Search Notes"):
             notes = progress_tracker.load_progress_notes(st.session_state["username"])
             if notes:
-                results = [n for n in notes if search_query.lower() in n["note"].lower()]
+                results = [n for n in notes if search_query.lower() in n.get("note", "").lower()]
                 if results:
                     st.success(f"Found {len(results)} matching notes.")
                     for entry in results:
                         with st.expander(f"{entry['timestamp']}"):
-                            st.text(entry['note'])
+                            st.text(entry.get('note', ''))
                 else:
                     st.warning("No matching notes found.")
             else:
                 st.warning("No progress notes found.")
+
     with cols2[2]:
         if st.button("Reset Progress Notes"):
             progress_tracker.reset_progress_notes(st.session_state["username"])
             st.success("All progress notes have been deleted.")
+
+    # Progress % logging + chart
+    st.divider()
+    st.markdown("#### Log Progress (%)")
+
+    colp1, colp2 = st.columns([3, 2])
+    with colp1:
+        progress_val = st.slider("Overall completion (%)", 0, 100, 0, step = 5)
+        progress_note_val = st.text_input("Optional note for this log", "")
+    with colp2:
+        if st.button("Save Progress %"):
+            # requires progress_tracker.save_progress_value(username, progress, note)
+            progress_tracker.save_progress_value(st.session_state["username"], progress_val, progress_note_val)
+            st.success("Progress percentage saved!")
+
+    st.markdown("#### Progress Chart")
+    all_logs = progress_tracker.load_progress_notes(st.session_state["username"])
+    prog_points = [e for e in all_logs if isinstance(e, dict) and "progress" in e]
+
+    if prog_points:
+        prog_points.sort(key = lambda x: x.get("timestamp", ""))
+        dates, values = [], []
+        for e in prog_points:
+            ts = e.get("timestamp", "")
+            try:
+                dt = datetime.fromisoformat(ts)
+            except Exception:
+                try:
+                    dt = datetime.strptime(ts.split(".")[0], "%Y-%m-%dT%H:%M:%S")
+                except Exception:
+                    continue
+            dates.append(dt)
+            try:
+                values.append(float(e.get("progress", 0)))
+            except Exception:
+                values.append(0.0)
+
+        if dates and values:
+            fig = plt.figure()
+            plt.plot(dates, values, marker="o")
+            plt.title("Study Progress Over Time")
+            plt.xlabel("Date")
+            plt.ylabel("Completion (%)")
+            plt.ylim(0, 100)
+            plt.grid(True)
+            st.pyplot(fig)
+
+            # Velocity & ETA
+            if len(values) >= 2:
+                span_days = (dates[-1] - dates[0]).days or 1
+                delta = values[-1] - values[0]
+                daily_velocity = delta / span_days
+                if daily_velocity > 0:
+                    remaining = 100 - values[-1]
+                    eta_days = int(round(remaining / daily_velocity))
+                    st.caption(f"Velocity ~ {daily_velocity:.2f}%/day · ETA to 100% ≈ {eta_days} day(s).")
+                else:
+                    st.caption("Velocity not increasing yet—log a few more progress points to estimate ETA.")
+        else:
+            st.info("No valid progress data to plot yet. Log a progress % to get started.")
+    else:
+        st.info("No progress logged yet. Use the slider above to add your first entry.")
 
 # TAB 3
 with tab3:
